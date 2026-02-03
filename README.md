@@ -1,1 +1,1 @@
-this gonna be fun :D
+A C runtime VM with garbage collection
