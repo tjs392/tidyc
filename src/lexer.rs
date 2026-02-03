@@ -7,7 +7,7 @@ pub enum Token {
     BoolLiteral(bool),
     Ident(String),
 
-    // Keywords
+    // keyword identifiers
     Int,
     Bool,
     Struct,
@@ -17,7 +17,7 @@ pub enum Token {
     While,
     Null,
 
-    // Operators
+    // operations
     Plus,
     Minus,
     Star,
@@ -31,7 +31,7 @@ pub enum Token {
     Not,        // !
     Assign,     // =
 
-    // Bitwise
+    // bitwise ops
     Ampersand,  // &
     Pipe,       // |
     Tilde,      // ~
@@ -39,7 +39,7 @@ pub enum Token {
     LShift,     // <<
     RShift,     // >>
 
-    // Delimiters
+    // delimiters
     LParen,     // (
     RParen,     // )
     LBrace,     // {
@@ -49,7 +49,7 @@ pub enum Token {
     Dot,        // .
     Colon,      // :
 
-    // End of file
+    // self explanatory
     EOF,
 }
 
@@ -76,8 +76,6 @@ impl Lexer {
         self.pos += 1;
         ch
     }
-
-
 
     pub fn tokenize(&mut self) -> Vec<Token> {
         let mut tokens = vec![];
