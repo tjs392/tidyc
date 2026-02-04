@@ -4,6 +4,20 @@ A C compiler targeting a custom VM with automatic garbage collection, written in
 
 **Status:** Early development. Lexer, AST, and parser are complete. Semantic analysis, code generation, VM, and GC are in progress.
 
+## Roadmap
+
+#### Done
+- Lexer
+- AST design
+- Parser
+
+#### TODO
+- Semantic analysis (type checking, symbol tables)
+- IR generation
+- VM implementation
+- Garbage collector
+- Standard library subset
+
 ## Language Specification
 
 CVM implements "Almost C" - a practical subset of C99 with some extensions.
@@ -56,17 +70,3 @@ CVM implements "Almost C" - a practical subset of C99 with some extensions.
 - Complex, Imaginary types
 - Designated initializers
 - Flexible array members
-
-## Roadmap
-
-#### Done
-- Lexer
-- AST design
-- Parser
-
-#### TODO
-- Semantic analysis (type checking, symbol tables)
-- IR generation
-- VM implementation
-- Garbage collector
-- Standard library subset
