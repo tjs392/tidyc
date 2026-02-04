@@ -49,6 +49,23 @@ pub enum Token {
     Dot,        // .
     Colon,      // :
 
+    Void,
+    For,
+    Break,
+    Continue,
+
+    PlusPlus,
+    MinusMinus,
+
+    PlusAssign,
+    MinusAssign,
+    StarAssign,
+    SlashAssign,
+
+    Percent,
+    Le,
+    Ge,
+
     // self explanatory
     EOF,
 }
@@ -97,6 +114,20 @@ impl Lexer {
                 continue;
             }
 
+            if ch == '/' && self.input.get(self.pos + 1) == Some(&'*') {
+                self.advance();
+                self.advance();
+                while self.pos < self.input.len() {
+                    if self.peek() == Some('*') && self.input.get(self.pos + 1) == Some(&'/') {
+                        self.advance();
+                        self.advance();
+                        break;
+                    }
+                    self.advance();
+                }
+                continue;
+            }
+
             // check for numbers
             if ch.is_ascii_digit() {
                 let mut num = String::new();
@@ -113,7 +144,7 @@ impl Lexer {
             }
 
             // check identifier
-            if ch.is_alphabetic() {
+            if ch.is_alphabetic() || ch == '_' {
                 let mut word = String::new();
                 while let Some(c) = self.peek() {
                     if c.is_alphanumeric() || c == '_' {
@@ -125,39 +156,49 @@ impl Lexer {
                 }
 
                 let token = match word.as_str() {
-                    "int"    => Token::Int,
-                    "bool"   => Token::Bool,
-                    "struct" => Token::Struct,
-                    "return" => Token::Return,
-                    "if"     => Token::If,
-                    "else"   => Token::Else,
-                    "while"  => Token::While,
-                    "null"   => Token::Null,
-                    "true"   => Token::BoolLiteral(true),
-                    "false"  => Token::BoolLiteral(false),
-                    _        => Token::Ident(word),
+                    "int"      => Token::Int,
+                    "bool"     => Token::Bool,
+                    "void"     => Token::Void,
+                    "struct"   => Token::Struct,
+                    "return"   => Token::Return,
+                    "if"       => Token::If,
+                    "else"     => Token::Else,
+                    "while"    => Token::While,
+                    "for"      => Token::For,
+                    "break"    => Token::Break,
+                    "continue" => Token::Continue,
+                    "true"     => Token::BoolLiteral(true),
+                    "false"    => Token::BoolLiteral(false),
+                    _          => Token::Ident(word),
                 };
                 tokens.push(token);
                 continue;
             }
 
             // check double char tokens like == << && etc.
-            if self.pos + 1  <self.input.len() {
-                let next = self.input[self.pos + 1];
-                let double_ch = match (ch, next) {
+            if let Some(next) = self.input.get(self.pos + 1) {
+                let token = match (ch, next) {
                     ('=', '=') => Some(Token::Eq),
                     ('!', '=') => Some(Token::NotEq),
+                    ('<', '=') => Some(Token::Le),
+                    ('>', '=') => Some(Token::Ge),
                     ('&', '&') => Some(Token::And),
                     ('|', '|') => Some(Token::Or),
                     ('<', '<') => Some(Token::LShift),
                     ('>', '>') => Some(Token::RShift),
-                    _          => None,
+                    ('+', '+') => Some(Token::PlusPlus),
+                    ('-', '-') => Some(Token::MinusMinus),
+                    ('+', '=') => Some(Token::PlusAssign),
+                    ('-', '=') => Some(Token::MinusAssign),
+                    ('*', '=') => Some(Token::StarAssign),
+                    ('/', '=') => Some(Token::SlashAssign),
+                    _ => None,
                 };
 
-                if let Some(token) = double_ch {
+                if let Some(tok) = token {
                     self.advance();
                     self.advance();
-                    tokens.push(token);
+                    tokens.push(tok);
                     continue;
                 }
             }
@@ -169,6 +210,7 @@ impl Lexer {
                 '-' => Token::Minus,
                 '*' => Token::Star,
                 '/' => Token::Slash,
+                '%' => Token::Percent,
                 '<' => Token::Lt,
                 '>' => Token::Gt,
                 '!' => Token::Not,
@@ -184,8 +226,7 @@ impl Lexer {
                 ';' => Token::Semicolon,
                 ',' => Token::Comma,
                 '.' => Token::Dot,
-                ':' => Token::Colon,
-                _   => panic!("Unexpected character: {}", ch),
+                _ => panic!("Unexpected character: {}", ch),
             };
             tokens.push(token);
         }
