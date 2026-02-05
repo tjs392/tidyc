@@ -98,11 +98,37 @@ pub enum Type {
     Pointer(Box<Type>), // int*, float*, etc.
     Array(Box<Type>, Option<usize>), // int[10] or int[],
 
+    // type refs for easy parsing
+    StructRef(String),
+    UnionRef(String),
+    EnumRef(String),
+    TypedefRef(String),
+
     // user defined
-    Struct(String),
-    Union(String),
-    Enum(String),
-    Typedef(String),
+    Struct {
+        name: String,
+        fields: Vec<(String, Type)>,
+    },
+
+    Union {
+        name: String,
+        fields: Vec<(String, Type)>,
+    },
+
+    Enum {
+        name: String,
+        variants: Vec<(String, Option<i64>)>,  // (name, optional_value)
+    },
+
+    Typedef {
+        name: String,
+        aliased_type: Box<Type>,
+    },
+
+    Function {
+        params: Vec<Type>,
+        return_type: Box<Type>,
+    },
 }
 
 // derived type, just const for now

@@ -54,7 +54,6 @@ pub struct Symbol {
     pub scope_level: usize,
     pub storage_class: StorageClass,
     pub is_const: bool,
-    pub line_number: usize,
 }
 
 pub struct Scope {
@@ -103,7 +102,7 @@ impl SymbolTable {
     }
 
     // declaring symbol in curr scope
-    pub fn declare_in_scope(&mut self, name: &str, typ: Type, storage: StorageClass, is_const: bool, line: usize) -> Result<(), String> {
+    pub fn declare_in_scope(&mut self, name: &str, typ: Type, storage: StorageClass, is_const: bool) -> Result<(), String> {
         let name_id = self.intern(name);
         let symbol = Symbol {
             name_id,
@@ -111,7 +110,6 @@ impl SymbolTable {
             scope_level: self.scope_level,
             storage_class: storage,
             is_const,
-            line_number: line,
         };
         self.scopes[self.scope_level].declare(name_id, symbol)
     }

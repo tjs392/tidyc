@@ -11,8 +11,8 @@ use std::env;
 use std::fs;
 use std::process;
 use std::time::Instant;
-use symbol_table::SymbolTable;
-use ast::{Type, StorageClass};
+
+use crate::semantic::SemanticAnalyzer;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -53,10 +53,29 @@ fn main() {
         }
     };
     let parse_time = parse_start.elapsed();
+
+    let semantic_start = Instant::now();
+    let mut analyzer = SemanticAnalyzer::new();
+    let semantic_result = analyzer.analyze(&ast);
+    let semantic_time = semantic_start.elapsed();
+
     let total_time = total_start.elapsed();
 
     println!("\n\n\n======== AST ========");
     println!("{:#?}", ast);
+
+    println!("\n\n\n======== SEMANTIC ANALYSIS ========");
+    match &semantic_result {
+        Ok(()) => {
+            println!("No semantic errors found");
+        }
+        Err(errors) => {
+            println!("Found {} semantic error(s):\n", errors.len());
+            for (i, err) in errors.iter().enumerate() {
+                println!("  {}. {}", i + 1, err);
+            }
+        }
+    }
 
     println!("\n\n\n ======== SUMMARY ========");
     println!("Total declarations: {}", ast.declarations.len());
@@ -112,15 +131,20 @@ fn main() {
     println!("Typedefs:  {}", typedef_count);
 
     println!("\n\n\n======== TIMINGS ========");
-    println!("File reading: {:?}", read_time);
-    println!("Lexing:       {:?}", lex_time);
-    println!("Parsing:      {:?}", parse_time);
-    println!("Total time:   {:?}", total_time);
+    println!("File reading:      {:?}", read_time);
+    println!("Lexing:            {:?}", lex_time);
+    println!("Parsing:           {:?}", parse_time);
+    println!("Semantic analysis: {:?}", semantic_time);
+    println!("Total time:        {:?}", total_time);
     
     let total_micros = total_time.as_micros() as f64;
     if total_micros > 0.0 {
         println!("\nbreakdown:");
-        println!("  Lexing:  {:.1}%", (lex_time.as_micros() as f64 / total_micros) * 100.0);
-        println!("  Parsing: {:.1}%", (parse_time.as_micros() as f64 / total_micros) * 100.0);
+        println!("Lexing: {:.1}%", (lex_time.as_micros() as f64 / total_micros) * 100.0);
+        println!("Parsing: {:.1}%", (parse_time.as_micros() as f64 / total_micros) * 100.0);
+    }
+
+    if semantic_result.is_err() {
+        process::exit(1);
     }
 }

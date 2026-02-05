@@ -405,24 +405,24 @@ impl Parser {
                     Token::Ident(n) => n,
                     other => panic!("expected struct name, got {:?}", other),
                 };
-                Type::Struct(name)
+                Type::StructRef(name)
             }
             Token::Union => {
                 let name = match self.advance() {
                     Token::Ident(n) => n,
                     other => panic!("Expected union name, got {:?}", other),
                 };
-                Type::Union(name)
+                Type::UnionRef(name)
             }
             Token::Enum => {
                 let name = match self.advance() {
                     Token::Ident(n) => n,
                     other => panic!("Expected enum name, got {:?}", other),
                 };
-                Type::Enum(name)
+                Type::EnumRef(name)
             }
             // chec for typedef types
-            Token::Ident(name) => Type::Typedef(name),
+            Token::Ident(name) => Type::TypedefRef(name),
             other => panic!("Expected type, got {:?}", other),
         };
 
