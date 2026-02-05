@@ -1,6 +1,8 @@
 mod ast;
 mod lexer;
 mod parser;
+mod symbol_table;
+mod semantic;
 
 use lexer::Lexer;
 use parser::Parser;
@@ -9,6 +11,8 @@ use std::env;
 use std::fs;
 use std::process;
 use std::time::Instant;
+use symbol_table::SymbolTable;
+use ast::{Type, StorageClass};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
