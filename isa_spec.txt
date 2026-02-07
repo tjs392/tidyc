@@ -8,8 +8,13 @@ how it works:
 
 instruction format:
 - 32 bits total
+
 - iABC format: [6-bit opcode][8-bit A][9-bit B][9-bit C]
   - for three operand instructions
+
+- iABx format: [6-bit opcode][8-bit A][18-bit Bx]
+  - for instructions with one register and a large immediate/index
+
 - max 256 registers per function (8 bits)
 
 instructions:
@@ -18,6 +23,13 @@ instructions:
 - MUL rA, rB, rC
 - DIV rA, rB, rC
 - MOD rA, rB, rC
+- LOADK rA, Kx -> load constant from constant table at index Kx into rA
+
+constant table:
+- each function has a constant table (vec of values)
+- stores int literals, float literals, strings, etc
+- LOADK references by index
+- built during codegen
 
 example codegen:
 - for expression like x + y
