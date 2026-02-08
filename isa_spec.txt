@@ -10,16 +10,19 @@ instruction format:
 - 32 bits total
 
 - iABC format: [6-bit opcode][8-bit A][9-bit B][9-bit C]
-  - for three operand instructions
+  - for three operand instructions (arithmetic, comparisons, moves)
 
 - iABx format: [6-bit opcode][8-bit A][18-bit Bx]
   - for instructions with one register and a large immediate/index
+
+- iAsBx format: [6-bit opcode][8-bit unused][18-bit sBx (signed)]
+  - for jump instructions with signed offset
 
 - max 256 registers per function (8 bits)
 
 instructions:
 
-iABC
+iABC (arithmetic and move)
 - ADD rA, rB, rC
 - SUB rA, rB, rC
 - MUL rA, rB, rC
@@ -27,8 +30,25 @@ iABC
 - MOD rA, rB, rC
 - MOV rA, rB, -
 
+iABC (comparisons - store result as 0 or 1)
+- EQ rA, rB, rC  --> rA = (rB == rC) ? 1 : 0
+- LT rA, rB, rC  --> rA = (rB < rC) ? 1 : 0
+- LE rA, rB, rC  --> rA = (rB <= rC) ? 1 : 0
+
 iABx
 - LOADK rA, Kx -> load constant from constant table at index Kx into rA
+- TEST rA -> check if rA is true (nonzero)
+
+iAsBx (control flow)
+- JMP sBx -> jump by signed offset sBx instructions
+
+control flow pattern:
+- for "if (x < 5) { body }"
+  1. LT r1, r0, r5         // r1 = (x < 5)
+  2. TEST r1               // test r1
+  3. JMP +skip             // if false, jump over body, skip is an offset
+  4. [body instructions]
+  5. skip:
 
 constant table:
 - each function has a constant table (vec of values)

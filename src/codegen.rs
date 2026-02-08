@@ -24,9 +24,14 @@ use crate::ast::{BinOp, Declaration, EnumDec, Expr, FunctionDec, Program, Statem
 pub enum OpCode {
     // iABC
     ADD, SUB, MUL, DIV, MOD, MOV,
+    EQ, LT, LE,
 
     // iABx
-    LOADK,
+    LOADK, 
+    TEST,
+
+    // iAsBx
+    JMP, // unconditional jump
 }
 
 
@@ -45,6 +50,11 @@ pub enum Instruction {
         opcode: OpCode, // 6 bit op
         a: u8,          // 8 bit dest reg
         bx: u32         // 18 bit immediate (262,143 MAX)
+    },
+
+    iAsBx {
+        opcode: OpCode,
+        offset: i32, // enforce signed 18 bit offset <<
     },
 }
 
@@ -107,9 +117,22 @@ impl FunctionBuilder {
         self.register_state.set(reg_id as usize, false)
     }
 
-    // emit instruction to instr vec
+    /// emit instruction to instr vec
     fn emit(&mut self, instr: Instruction) {
         self.instructions.push(instr);
+    }
+
+    fn emit_jump_placeholder(&mut self) -> usize {
+        self.emit(Instruction::iAsBx { opcode: OpCode::JMP, offset: 0 });
+        self.instructions.len() - 1
+    }
+
+    fn finish_jump(&mut self, jump_idx: usize) {
+        let offset = (self.instructions.len() - jump_idx - 1) as i32;
+        self.instructions[jump_idx] = Instruction::iAsBx { 
+            opcode: OpCode::JMP, 
+            offset 
+        };
     }
 
     fn add_constant(&mut self, value: i64) -> usize {
@@ -165,7 +188,45 @@ impl FunctionBuilder {
                 }
             }
 
-            _ => todo!()
+            // if statement are pretty straight forward
+            Statement::If(cond, then_body, else_body) => {
+                let cond_reg = self.gen_expr(cond, None);
+                self.emit(Instruction::ABC { opcode: OpCode::TEST, a: cond_reg, b: 0, c: 0 });
+
+                let jmp_to_else = self.emit_jump_placeholder();
+
+                for stmt in then_body {
+                    self.gen_statement(stmt);
+                }
+
+                if let Some(else_block) = else_body {
+                    let jmp_skip_else = self.emit_jump_placeholder();
+                    self.finish_jump(jmp_to_else);
+
+                    for stmt in else_block { 
+                        self.gen_statement(stmt);
+                    }
+
+                    self.finish_jump(jmp_skip_else);
+                } else {
+                    self.finish_jump(jmp_to_else);
+                }
+
+                if !self.permanent_regs.contains(&cond_reg) {
+                    self.free_register(cond_reg);
+                }
+            }
+
+            Statement::Block(stmts) => {
+                for s in stmts {
+                    self.gen_statement(s);
+                }
+            }
+
+            other => {
+                eprintln!("Unimplemented stateme: {:?}", other);
+                todo!()
+            }
         }
     }
 
@@ -209,7 +270,15 @@ impl FunctionBuilder {
                     BinOp::Mul => OpCode::MUL,
                     BinOp::Div => OpCode::DIV,
                     BinOp::Mod => OpCode::MOD,
-                    other => panic!("Not implemented {:?}", other),
+
+                    BinOp::Eq => OpCode::EQ,
+                    BinOp::Lt => OpCode::LT,
+                    BinOp::Le => OpCode::LE,
+
+                    other => {
+                        eprintln!("Unimplemented expression: {:?}", other);
+                        todo!()
+                    }
                 };
 
                 self.emit(
@@ -250,7 +319,10 @@ impl FunctionBuilder {
                 }
             }
 
-            _ => todo!()
+            other => {
+                eprintln!("Unimplemented expression: {:?}", other);
+                todo!()
+            }
         }
     }
 }
@@ -282,10 +354,15 @@ impl CodeGenerator {
                             OpCode::DIV => "DIV",
                             OpCode::MOD => "MOD",
                             OpCode::MOV => "MOV",
+                            OpCode::EQ => "EQ",
+                            OpCode::LT => "LT",
+                            OpCode::LE => "LE",
+                            OpCode::TEST => "TEST",
                             _ => "Unknown",
                         };
                         println!("{:04}: {} r{}, r{}, r{}", i, op_name, a, b, c);
                     }
+
                     Instruction::ABx { opcode, a, bx } => {
                         let op_name = match opcode {
                             OpCode::LOADK => "LOADK",
@@ -293,6 +370,15 @@ impl CodeGenerator {
                         };
                         println!("{:04}: {} r{}, K{}", i, op_name, a, bx);
                     }
+
+                    Instruction::iAsBx { opcode, offset } => {
+                        let op_name = match opcode {
+                            OpCode::JMP => "JMP",
+                            _ => "Unknown",
+                        };
+                        println!("{:04}: {} {},", i, op_name, offset);
+                    }
+
                 }
             }
             
